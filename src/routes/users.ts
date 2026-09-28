@@ -24,7 +24,10 @@ type RequestParsed = Request & {
 usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), async (request: RequestParsed, response) => {
     const users = await prisma.user.findMany({
         skip: request.queryParsed.offset,
-        take: request.queryParsed.limit
+        take: request.queryParsed.limit,
+        omit: {
+            password: true
+        }
     })
 
     const meta = {
@@ -40,26 +43,41 @@ usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), async 
 usersRouter.post('/users', async (request, response) => {
     const newUser = z.parse(createUserSchema, request.body)
 
-    const newRecord = await prisma.user.create({
-        data: newUser
-    })
+    try {
+        const newRecord = await prisma.user.create({
+            data: newUser
+        })
 
-    formatSuccess(response, { user: newRecord }, 201)
+        formatSuccess(response, { user: newRecord }, 201)
+    } catch (error) {
+        formatError(
+            response, 
+            "Пользователь уже существует", 
+            409, 
+            { username: newUser.username }
+        )
+    }
 })
 
-usersRouter.get('/users/:username', auth, (request, response) => {
-    const user = users.find(
-        u => u.username === request.params['username']
+usersRouter.get('/users/:username', auth, async (request, response) => {
+    const { username } = z.parse(
+        z.strictObject({ username: z.string().min(3) }),
+        request.params
     )
+
+    const user = await prisma.user.findUnique({
+        where: {
+            username
+        },
+        omit: {
+            password: true
+        }
+    })
 
     if (!user) {
         formatError(response, "Пользователь не найден", 404)
         return
     }
 
-    const data = {
-        user
-    }
-
-    formatSuccess(response, data, 200)
+    formatSuccess(response, { user }, 200)
 })

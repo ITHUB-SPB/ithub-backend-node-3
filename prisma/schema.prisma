@@ -12,9 +12,24 @@ enum Role {
   MODERATOR
 }
 
+enum Status {
+  NEW
+  READ
+}
+
 model User {
-  id Int @id @default(autoincrement())
-  username String @unique
-  password String
-  role Role @default(USER)
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  password      String
+  role          Role           @default(USER)
+  notifications Notification[]
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  content   String
+  status    Status   @default(NEW)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
 }

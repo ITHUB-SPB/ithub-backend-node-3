@@ -7,7 +7,8 @@
     "check": "tsc --noEmit",
     "build": "tsc",
     "db:push": "prisma db push",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:seed": "tsx src/seed.ts"
   },
   "type": "module",
   "devDependencies": {
