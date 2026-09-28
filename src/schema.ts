@@ -3,8 +3,11 @@ import * as z from "zod"
 export const createUserSchema = z.strictObject({
     username: z.string("Обязательное поле").min(3),
     password: z.string().min(6).regex(/[^\w\s]+/, "Нужен хотя бы один спецсимвол"),
-    age: z.coerce.number().positive().min(1),
-    role: z.optional(z.literal(["MODERATOR", "MODERATOR"])).default("user")
+    role: z.optional(z.literal(["USER", "MODERATOR"])).default("USER")
+})
+
+export const userSchema = createUserSchema.extend({
+    id: z.number().int().min(1)
 })
 
 export const getUsersSchema = z.strictObject({

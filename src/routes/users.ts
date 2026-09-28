@@ -44,7 +44,7 @@ usersRouter.post('/users', async (request, response) => {
         data: newUser
     })
 
-    formatSuccess(response, newRecord, 201)
+    formatSuccess(response, { user: newRecord }, 201)
 })
 
 usersRouter.get('/users/:username', auth, (request, response) => {
