@@ -8,3 +8,7 @@
 8. `npm i -D @types/express`
 9. `npm i -D tsx`
 10. Создаем `src/index.ts`
+---
+11. `npm i prisma@7.10.0 @prisma/client`
+12. `npm i -D dotenv`
+13. `npx init prisma --datasource-provider sqlite`
