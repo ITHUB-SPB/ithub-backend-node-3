@@ -2,7 +2,7 @@ import { Router, type Request } from "express"
 import * as z from "zod"
 import { ru } from "zod/locales"
 
-import { users } from "../data.js"
+import { prisma } from "../db.js"
 import { createUserSchema, getUsersSchema } from '../schema.js'
 
 import auth from "../middleware/auth.js"
@@ -21,13 +21,11 @@ type RequestParsed = Request & {
     queryParsed?: object
 }
 
-usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), (request: RequestParsed, response) => {
-    const data = {
-        users: users.slice(
-            request.queryParsed.offset,
-            request.queryParsed.offset + request.queryParsed.limit
-        )
-    }
+usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), async (request: RequestParsed, response) => {
+    const users = await prisma.user.findMany({
+        skip: request.queryParsed.offset,
+        take: request.queryParsed.limit
+    })
 
     const meta = {
         total: users.length,
@@ -36,16 +34,17 @@ usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), (reque
         pages: Math.ceil(users.length / request.queryParsed.limit)
     }
 
-    formatSuccess(response, { ...data, meta }, 200)
+    formatSuccess(response, { users, meta }, 200)
 })
 
-usersRouter.post('/users', (request, response) => {
+usersRouter.post('/users', async (request, response) => {
     const newUser = z.parse(createUserSchema, request.body)
 
-    users.push(newUser)
-    const data = { user: users.at(-1)! }
+    const newRecord = await prisma.user.create({
+        data: newUser
+    })
 
-    formatSuccess(response, data, 201)
+    formatSuccess(response, newRecord, 201)
 })
 
 usersRouter.get('/users/:username', auth, (request, response) => {
