@@ -17,12 +17,29 @@ enum Status {
   READ
 }
 
+enum NotificationTitle {
+  NEW_MESSAGE
+  NEW_PAYMENT
+  NEWSLETTER
+}
+
 model User {
   id            Int            @id @default(autoincrement())
   username      String         @unique
   password      String
   role          Role           @default(USER)
+  
   notifications Notification[]
+  profile       Profile?
+}
+
+model Profile {
+  id            Int            @id @default(autoincrement())
+  avatar        String?
+  bio           String
+
+  userId        Int            @unique
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -32,4 +49,12 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
+  types     NotificationType[]
+}
+
+
+model NotificationType {
+  id              Int                   @id @default(autoincrement())
+  title           NotificationTitle
+  notifications   Notification[]
 }

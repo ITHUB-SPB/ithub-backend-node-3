@@ -7,6 +7,8 @@
     "check": "tsc --noEmit",
     "build": "tsc",
     "db:push": "prisma db push",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:migrate:up": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx src/seed.ts"
   },
