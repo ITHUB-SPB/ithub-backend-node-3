@@ -3,7 +3,7 @@ import * as z from "zod"
 import { ru } from "zod/locales"
 
 import { prisma } from "../db.js"
-import { createUserSchema, getUsersSchema } from '../schema.js'
+import { createUserSchema, getUsersSchema, createProfileSchema, updateProfileSchema } from '../schema/users.js'
 
 import auth from "../middleware/auth.js"
 // TODO добавить возможность задать конкретную роль
@@ -27,6 +27,9 @@ usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), async 
         take: request.queryParsed.limit,
         omit: {
             password: true
+        },
+        include: {
+            profile: true
         }
     })
 
@@ -40,6 +43,60 @@ usersRouter.get('/users', auth, roles, validate(getUsersSchema, 'query'), async 
     formatSuccess(response, { users, meta }, 200)
 })
 
+usersRouter.post('/users/profile', async (request, response) => {
+    const newProfile = z.parse(createProfileSchema, request.body)
+
+    try {
+        const newRecord = await prisma.profile.create({
+            data: {
+                bio: newProfile.bio,
+                user: {
+                    connect: {
+                        username: newProfile.username
+                    }
+                }
+            }
+        })
+
+        formatSuccess(response, { profile: newRecord }, 201)
+    } catch (error) {
+        formatError(
+            response,
+            "Профиль уже существует",
+            409,
+            { username: newProfile.username }
+        )
+    }
+})
+
+usersRouter.patch('/users/profile/:profileId', async (request, response) => {
+    const profileId = Number(request.params.profileId)
+    const updatedProfile = z.parse(updateProfileSchema, request.body)
+
+    try {
+
+        const newRecord = await prisma.profile.update({
+            data: {
+                bio: updatedProfile.bio,
+                avatar: updatedProfile.avatar || null,
+            },
+            where: {
+                id: profileId
+            }
+        })
+
+        formatSuccess(response, { profile: newRecord }, 201)
+    } catch (error) {
+        formatError(
+            response,
+            "Не удалось обновить профиль",
+            409,
+            { username: updatedProfile.username }
+        )
+    }
+})
+
+
 usersRouter.post('/users', async (request, response) => {
     const newUser = z.parse(createUserSchema, request.body)
 
@@ -51,9 +108,9 @@ usersRouter.post('/users', async (request, response) => {
         formatSuccess(response, { user: newRecord }, 201)
     } catch (error) {
         formatError(
-            response, 
-            "Пользователь уже существует", 
-            409, 
+            response,
+            "Пользователь уже существует",
+            409,
             { username: newUser.username }
         )
     }

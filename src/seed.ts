@@ -1,6 +1,7 @@
 import * as z from 'zod'
 import { prisma } from './db.js'
-import { createUserSchema, createNotificationSchema } from './schema.js'
+import { createUserSchema } from './schema/users.js'
+import { createNotificationSchema } from './schema/notifications.js'
 
 async function seedUsers() {
     const users: z.infer<typeof createUserSchema>[] = [

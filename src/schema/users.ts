@@ -19,15 +19,13 @@ export const getUsersSchema = z.strictObject({
     ).default(0)
 })
 
-export const notificationSchema = z.strictObject({
-    id: z.number().int().min(1),
-    status: z.literal(["NEW", "READ"]),
-    content: z.string().min(5),
-    createdAt: z.date(),
-    userId: z.number().int().min(1)
+export const createProfileSchema = z.strictObject({
+    username: z.string("Обязательное поле").min(3),
+    bio: z.string().min(3),
+    avatar: z.optional(z.string())
 })
 
-export const createNotificationSchema = notificationSchema.pick({
-    content: true,
-    userId: true
+export const updateProfileSchema = z.strictObject({
+    bio: z.optional(z.string().min(3)),
+    avatar: z.optional(z.string())
 })
