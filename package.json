@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "tsx --watch src/index.ts",
     "check": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "db:push": "prisma db push",
+    "db:migrate:reset": "prisma migrate reset",
+    "db:migrate:up": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:seed": "tsx src/seed.ts"
   },
   "type": "module",
   "devDependencies": {
@@ -13,13 +18,17 @@
     "@types/mime-types": "^3.0.1",
     "@types/multer": "^2.2.0",
     "@types/node": "^22.20.3",
+    "dotenv": "^18.0.4",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "express": "^5.2.1",
     "mime-types": "^3.0.2",
     "multer": "^2.4.0",
+    "prisma": "^7.10.0",
     "zod": "^4.6.5"
   }
 }
