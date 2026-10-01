@@ -1,7 +1,19 @@
 import type { Request, Response, NextFunction } from 'express'
 
-const logger = (request: Request, response: Response, next: NextFunction) => {
+export default function (request: Request, response: Response, next: NextFunction) {
+    const startTime = Date.now()
 
+    const info = {
+        url: request.url,
+        params: request.params,
+        queryParams: request.query ?? {},
+        body: JSON.parse(request.body ?? {})
+    }
+
+    response.on('end', () => {
+        const duration = Date.now() - startTime
+        console.info(`[${duration.toFixed(3)} ms]: ${info}`)
+    })
+
+    next()
 }
-
-export default logger

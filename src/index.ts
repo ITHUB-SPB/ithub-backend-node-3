@@ -1,27 +1,32 @@
+import path from 'node:path'
 import express from 'express'
 import * as z from "zod"
 import { ru } from "zod/locales"
+
+import { productsRouter } from './routes/products.js'
+import { logger, errorHandler } from './middleware/index.js'
+import type { ErrorWithCode } from './types.js'
 
 z.config(ru())
 
 const app = express()
 
-// подключение раздачи статики по виртуальному пути /static из директории /assets
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use('/static', express.static(path.join(import.meta.dirname, '..', 'assets', 'uploads')))
 
-// встроенные глобальные миддлвэа на парсинг тел в json и x-www-form-urlencoded
-// TODO
-// TODO
+app.use(logger)
 
-// самописный миддлвэа на логгирование
-// TODO
+app.use('/api/products', productsRouter)
 
-// подключение роутера продуктов
-// TODO
+app.use((_request: express.Request, _response: express.Response, next: express.NextFunction) => {
+    const error = new Error('Ресурс не найден') as ErrorWithCode
+    error.code = "404"
 
-// подключение обработчика not-found запросов
-// TODO
+    next(error)
+})
 
-// подключение глобального error-миддлвэа
-// TODO
+
+app.use(errorHandler)
 
 app.listen(3000)
