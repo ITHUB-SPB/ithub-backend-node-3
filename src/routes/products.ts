@@ -3,15 +3,15 @@ import * as z from 'zod'
 
 import { productsRepository } from "../repository/products.repository.js"
 import { formatSuccess } from "../middleware/format-result.js"
-import * as schema from '../schema.js'
+import { getProductsInputSchema, getProductsWithMetaOutputSchema } from '../schemas/products.schema.js'
 
 export const productsRouter = Router()
 
 productsRouter.get('/', (request: Request, response: Response) => {
-    const { query } = z.parse(schema.getProductsInputSchema, request)
-    const { data, meta } = productsRepository.getAll(query)
+    const input = z.parse(getProductsInputSchema, request)
+    const { data, meta } = productsRepository.getAll(input)
 
-    const responseData = schema.getProductsWithMetaOutputSchema.parse({
+    const responseData = getProductsWithMetaOutputSchema.parse({
         data,
         meta
     })

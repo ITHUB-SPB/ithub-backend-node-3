@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { productSchema } from "./schema.js"
+import { productSchema } from "./schemas/products.schema.js"
 
 export const products: z.output<typeof productSchema>[] = [
     {
@@ -32,5 +32,4 @@ export const products: z.output<typeof productSchema>[] = [
         imageUrl: null,
         createdAt: new Date(2023, 2, 8).toLocaleString()
     }
-
 ]

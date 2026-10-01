@@ -1,6 +1,6 @@
 import * as z from 'zod'
 import { ProductsRepository } from "./abstract.js";
-import { productSchema, getProductsInputSchema, getProductsWithMetaOutputSchema } from '../schema.js'
+import { productSchema, getProductsInputSchema, getProductsWithMetaOutputSchema } from '../schemas/products.schema.js'
 
 import { products } from "../data.js";
 
@@ -14,27 +14,27 @@ class ProductsRepositoryLocal extends ProductsRepository<true> {
         this.products = products;
     }
 
-    override getAll(input: z.output<typeof getProductsInputSchema>['query']): z.output<typeof getProductsWithMetaOutputSchema> {
+    override getAll(input: z.output<typeof getProductsInputSchema>): z.output<typeof getProductsWithMetaOutputSchema> {
         const filteredData = this.products.filter((product) => {
-            if (product.category && product.category !== input.category) {
+            if (product.category && product.category !== input.query.category) {
                 return false
             }
-            return product.price >= input.minPrice && product.price <= input.maxPrice
+            return product.price >= input.query.minPrice && product.price <= input.query.maxPrice
         })
 
-        const paginatedData = filteredData.slice((input.page - 1) * input.limit, input.page * input.limit)
+        const paginatedData = filteredData.slice((input.query.page - 1) * input.query.limit, input.query.page * input.query.limit)
 
         const meta = {
             total: this.products.length,
-            page: input.page,
-            limit: input.limit,
-            pages: Math.ceil(this.products.length / input.limit),
+            page: input.query.page,
+            limit: input.query.limit,
+            pages: Math.ceil(this.products.length / input.query.limit),
         } as const;
 
         return { data: paginatedData, meta }
     }
 
-    override getOne(id: number): Product {
+    override getOne(id: number): Partial<Product> | undefined {
         const record = this.products.find(product => product.id === id)
 
         if (!record) {
@@ -44,14 +44,14 @@ class ProductsRepositoryLocal extends ProductsRepository<true> {
         return record
     }
 
-    override add(record: Omit<Product, "id">): Product {
+    override add(record: Omit<Product, "id" | "createdAt">): Partial<Product> {
         const lastId = this.products.at(-1)?.id ?? 0
-        this.products.push({ ...record, id: lastId + 1 })
+        this.products.push({ ...record, id: lastId + 1, createdAt: new Date().toLocaleString() })
 
         return this.products.at(-1)!
     }
 
-    override update(id: number, newRecord: Partial<Product>): Product {
+    override update(id: number, newRecord: Partial<Product>): Partial<Product> {
         const record = this.getOne(id)
 
         if (!record) {
