@@ -9,6 +9,7 @@
   },
   "type": "module",
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/express": "^5.0.6",
     "@types/mime-types": "^3.0.1",
     "@types/multer": "^2.2.0",
@@ -17,9 +18,13 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "dotenv": "^18.0.5",
     "express": "^5.2.1",
     "mime-types": "^3.0.2",
     "multer": "^2.4.0",
+    "prisma": "^7.10.0",
     "zod": "^4.6.5"
   }
 }
