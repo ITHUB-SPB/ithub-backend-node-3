@@ -8,9 +8,10 @@ export const products: z.output<typeof productSchema>[] = [
         category: "clothing",
         description: "xl",
         price: 4200,
-        stock: 0,
         imageUrl: null,
-        createdAt: new Date(2022, 8, 10).toLocaleString()
+        accountId: 1,
+        archived: false,
+        createdAt: new Date(2022, 8, 10)
     },
     {
         id: 2,
@@ -18,9 +19,10 @@ export const products: z.output<typeof productSchema>[] = [
         category: "clothing",
         description: "sm",
         price: 13100,
-        stock: 0,
         imageUrl: null,
-        createdAt: new Date(2022, 9, 11).toLocaleString()
+        accountId: 1,
+        archived: false,
+        createdAt: new Date(2022, 9, 11)
     },
     {
         id: 3,
@@ -28,8 +30,9 @@ export const products: z.output<typeof productSchema>[] = [
         category: "electronics",
         description: "sm",
         price: 6500,
-        stock: 0,
         imageUrl: null,
-        createdAt: new Date(2023, 2, 8).toLocaleString()
+        accountId: 1,
+        archived: false,
+        createdAt: new Date(2023, 2, 8)
     }
 ]

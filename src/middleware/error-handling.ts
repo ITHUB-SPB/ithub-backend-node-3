@@ -3,6 +3,8 @@ import { treeifyError, ZodError } from "zod"
 import type { ErrorWithCode } from "../types.js"
 
 export default function (error: ErrorWithCode, _: Request, response: Response, next: NextFunction): void {
+    console.error(error)
+
     if (error instanceof ZodError) {
         response.status(422).json({
             success: false,

@@ -117,3 +117,5 @@
 2. `npm install -D @types/better-sqlite3`
 3. `npx prisma init --datasource-provider sqlite --output ../generated/prisma`
 4. `npx prisma migrate dev --name init` либо `npm run db:migrate:up`
+
+[Prisma ORM Docs](https://www.prisma.io/docs/orm/v7/prisma-client/queries/crud#read)

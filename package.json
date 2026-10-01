@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "tsx --watch src/index.ts",
     "check": "tsc --noEmit",
-    "build": "tsc"
+    "build": "tsc",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate"
   },
   "type": "module",
   "devDependencies": {

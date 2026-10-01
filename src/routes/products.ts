@@ -7,14 +7,16 @@ import { getProductsInputSchema, getProductsWithMetaOutputSchema } from '../sche
 
 export const productsRouter = Router()
 
-productsRouter.get('/', (request: Request, response: Response) => {
+productsRouter.get('/', async (request: Request, response: Response) => {
     const input = z.parse(getProductsInputSchema, request)
-    const { data, meta } = productsRepository.getAll(input)
+    const { data, meta } = await productsRepository.getAll(input)
 
     const responseData = getProductsWithMetaOutputSchema.parse({
         data,
         meta
     })
+
+    console.log(responseData)
 
     formatSuccess(response, responseData, "200")
 })

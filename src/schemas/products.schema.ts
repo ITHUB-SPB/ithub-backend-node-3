@@ -1,21 +1,34 @@
 import * as z from "zod"
 import { metaSchema } from "./common.schema.js"
 
-export const createProductInputSchema = z.strictObject({
+export const createProductInputSchema = z.object({
+    body: z.strictObject({
+        name: z.string().min(2).max(100),
+        price: z.number().positive(),
+        category: z.literal(['electronics', 'clothing', 'food', 'other']),
+        description: z.nullable(z.string().max(500)),
+        imageUrl: z.nullable(z.url()),
+    }),
+    headers: z.looseObject({
+        Authorization: z.email()
+    }),
+})
+
+export const productSchema = z.object({
+    id: z.number().positive().int(),
+    accountId: z.number().positive().int(),
     name: z.string().min(2).max(100),
     price: z.number().positive(),
     category: z.literal(['electronics', 'clothing', 'food', 'other']),
-    stock: z.number().positive().int(),
-    description: z.optional(z.nullable(z.string().max(500))),
+    description: z.nullable(z.string().max(500)),
+    imageUrl: z.nullable(z.url()),
+    archived: z.boolean(),
+    createdAt: z.date()
 })
 
-export const productSchema = createProductInputSchema.extend({
-    id: z.number().positive().int(),
-    imageUrl: z.optional(z.nullable(z.url())),
-    createdAt: z.iso.datetime()
+export const getProductOutputSchema = productSchema.extend({
+    email: z.email()
 })
-
-export const getProductOutputSchema = productSchema
 
 export const getProductsInputSchema = z.object({
     query: z.object({

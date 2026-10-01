@@ -2,3 +2,4 @@ node_modules
 dist
 *lock.json
 /generated/prisma
+prisma/migrations

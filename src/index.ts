@@ -17,7 +17,7 @@ app.use('/static', express.static(path.join(import.meta.dirname, '..', 'assets',
 
 app.use(logger)
 
-app.use('/api/products', productsRouter)
+app.use('api/products', productsRouter)
 
 app.use((_request: express.Request, _response: express.Response, next: express.NextFunction) => {
     const error = new Error('Ресурс не найден') as ErrorWithCode

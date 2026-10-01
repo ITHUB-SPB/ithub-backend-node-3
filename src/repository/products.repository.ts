@@ -1,12 +1,84 @@
 import * as z from 'zod'
-import { ProductsRepository } from "./abstract.js";
-import { productSchema, getProductsInputSchema, getProductsWithMetaOutputSchema } from '../schemas/products.schema.js'
+import { prisma } from '../prisma.js'
 
+import { ProductsRepository } from "./abstract.js";
+import { productSchema, createProductInputSchema, getProductOutputSchema, getProductsInputSchema, getProductsWithMetaOutputSchema } from '../schemas/products.schema.js'
 import { products } from "../data.js";
 
 type Product = z.output<typeof productSchema>
 
-class ProductsRepositoryLocal extends ProductsRepository<true> {
+class ProductsRepositorySqlite extends ProductsRepository<false> {
+    override async add(record: z.output<typeof createProductInputSchema>): Promise<z.output<typeof getProductOutputSchema>> {
+        try {
+            const { account, ...rest } = await prisma.product.create({
+                data: {
+                    ...record.body,
+                    account: {
+                        connect: {
+                            email: record.headers.Authorization
+                        }
+                    }
+                },
+                include: {
+                    account: {
+                        select: {
+                            email: true
+                        }
+                    }
+                },
+            })
+
+            return { ...rest, email: account.email }
+        } catch (error) {
+            throw error
+        }
+    }
+
+    override getAll(input: z.output<typeof getProductsInputSchema>): Promise<z.output<typeof getProductsWithMetaOutputSchema>> {
+        return Promise.resolve({
+            data: [
+                {
+                    id: 1,
+                    name: "bloose",
+                    category: "clothing",
+                    description: "xl",
+                    price: 4200,
+                    imageUrl: null,
+                    accountId: 1,
+                    archived: false,
+                    createdAt: new Date(2022, 8, 10)
+                }
+            ],
+            meta: {
+                limit: 10,
+                page: 1,
+                pages: 1,
+                total: 1
+            }
+        })
+    }
+
+    override async getOne(id: number | string): Promise<z.output<typeof getProductOutputSchema>> {
+        return Promise.resolve({
+            id: 1,
+            name: "bloose",
+            category: "clothing",
+            description: "xl",
+            price: 4200,
+            imageUrl: null,
+            accountId: 1,
+            archived: false,
+            createdAt: new Date(2022, 8, 10),
+            email: "test@example.com"
+        })
+    }
+
+    override async delete(id: number | string): Promise<void> {
+        return
+    }
+}
+
+class ProductsRepositoryMemory extends ProductsRepository<true> {
     private products: Product[];
 
     constructor() {
@@ -34,31 +106,21 @@ class ProductsRepositoryLocal extends ProductsRepository<true> {
         return { data: paginatedData, meta }
     }
 
-    override getOne(id: number): Partial<Product> | undefined {
+    override getOne(id: number | string): z.output<typeof getProductOutputSchema> {
         const record = this.products.find(product => product.id === id)
 
         if (!record) {
             throw new Error('Record not found')
         }
 
-        return record
+        return { ...record, email: "test@example.com" }
     }
 
-    override add(record: Omit<Product, "id" | "createdAt">): Partial<Product> {
+    override add(record: z.output<typeof createProductInputSchema>): z.output<typeof getProductOutputSchema> {
         const lastId = this.products.at(-1)?.id ?? 0
-        this.products.push({ ...record, id: lastId + 1, createdAt: new Date().toLocaleString() })
+        this.products.push({ ...record.body, id: lastId + 1, archived: false, accountId: 1, createdAt: new Date() })
 
-        return this.products.at(-1)!
-    }
-
-    override update(id: number, newRecord: Partial<Product>): Partial<Product> {
-        const record = this.getOne(id)
-
-        if (!record) {
-            throw new Error('Record not found')
-        }
-
-        return Object.assign(record, newRecord)
+        return { ...this.products.at(-1)!, email: "test@example.com" }
     }
 
     override delete(id: number): void {
@@ -72,4 +134,4 @@ class ProductsRepositoryLocal extends ProductsRepository<true> {
     }
 }
 
-export const productsRepository = process.env.DEBUG ? new ProductsRepositoryLocal() : new ProductsRepositoryLocal()
+export const productsRepository = !process.env['DATABASE_URL'] ? new ProductsRepositoryMemory() : new ProductsRepositorySqlite()

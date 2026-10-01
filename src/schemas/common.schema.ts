@@ -10,8 +10,8 @@ export const metaSchema = z.strictObject({
 })
 
 export const inputSchema = z.object({
-    body: z.union([z.null(), z.any(), z.object()]),
-    query: z.union([z.null(), z.any(), z.object()]),
-    params: z.union([z.null(), z.any(), z.object()]),
-    headers: z.union([z.null(), z.any(), z.object()])
+    body: z.any(),
+    query: z.any(),
+    params: z.any(),
+    headers: z.any()
 })
