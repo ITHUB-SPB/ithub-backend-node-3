@@ -110,3 +110,10 @@
 --- | ---
 Проект полностью типизирован без единого `any` | **+ 2 балла**
 Проект написан на `JS`, без типизации | **- 2 балла**
+
+## Первые шаги
+
+1. `npm install prisma@prev @prisma/client@7 @prisma/adapter-better-sqlite3 dotenv`
+2. `npm install -D @types/better-sqlite3`
+3. `npx prisma init --datasource-provider sqlite --output ../generated/prisma`
+4. `npx prisma migrate dev --name init` либо `npm run db:migrate:up`
