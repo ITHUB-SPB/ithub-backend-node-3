@@ -15,20 +15,13 @@ enum Category {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  price       Float
-  category    Category
-  description String?
-  imageUrl    String?
-  archived    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  accountId   Int
-  account     Account  @relation(fields: [accountId], references: [id])
-}
-
-model Account {
-  id       Int       @id @default(autoincrement())
-  email    String    @unique
-  products Product[]
+  id           Int      @id @default(autoincrement())
+  name         String
+  price        Float
+  category     Category
+  description  String?
+  imageUrl     String?
+  archived     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  accountEmail String
 }

@@ -16,19 +16,17 @@ export const createProductInputSchema = z.object({
 
 export const productSchema = z.object({
     id: z.number().positive().int(),
-    accountId: z.number().positive().int(),
     name: z.string().min(2).max(100),
     price: z.number().positive(),
     category: z.literal(['electronics', 'clothing', 'food', 'other']),
     description: z.nullable(z.string().max(500)),
     imageUrl: z.nullable(z.url()),
     archived: z.boolean(),
+    accountEmail: z.email(),
     createdAt: z.date()
 })
 
-export const getProductOutputSchema = productSchema.extend({
-    email: z.email()
-})
+export const getProductOutputSchema = productSchema
 
 export const getProductsInputSchema = z.object({
     query: z.object({

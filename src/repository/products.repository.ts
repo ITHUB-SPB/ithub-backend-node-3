@@ -10,25 +10,11 @@ type Product = z.output<typeof productSchema>
 class ProductsRepositorySqlite extends ProductsRepository<false> {
     override async add(record: z.output<typeof createProductInputSchema>): Promise<z.output<typeof getProductOutputSchema>> {
         try {
-            const { account, ...rest } = await prisma.product.create({
-                data: {
-                    ...record.body,
-                    account: {
-                        connect: {
-                            email: record.headers.Authorization
-                        }
-                    }
-                },
-                include: {
-                    account: {
-                        select: {
-                            email: true
-                        }
-                    }
-                },
+            const createdRecord = await prisma.product.create({
+                data: record.body,
             })
 
-            return { ...rest, email: account.email }
+            return createdRecord
         } catch (error) {
             throw error
         }
@@ -44,7 +30,7 @@ class ProductsRepositorySqlite extends ProductsRepository<false> {
                     description: "xl",
                     price: 4200,
                     imageUrl: null,
-                    accountId: 1,
+                    accountEmail: "test@example.com",
                     archived: false,
                     createdAt: new Date(2022, 8, 10)
                 }
@@ -66,7 +52,7 @@ class ProductsRepositorySqlite extends ProductsRepository<false> {
             description: "xl",
             price: 4200,
             imageUrl: null,
-            accountId: 1,
+            accountEmail: "test@example.com",
             archived: false,
             createdAt: new Date(2022, 8, 10),
             email: "test@example.com"
@@ -113,14 +99,14 @@ class ProductsRepositoryMemory extends ProductsRepository<true> {
             throw new Error('Record not found')
         }
 
-        return { ...record, email: "test@example.com" }
+        return record
     }
 
     override add(record: z.output<typeof createProductInputSchema>): z.output<typeof getProductOutputSchema> {
         const lastId = this.products.at(-1)?.id ?? 0
-        this.products.push({ ...record.body, id: lastId + 1, archived: false, accountId: 1, createdAt: new Date() })
+        this.products.push({ ...record.body, id: lastId + 1, archived: false, accountEmail: record.headers.Authorization, createdAt: new Date() })
 
-        return { ...this.products.at(-1)!, email: "test@example.com" }
+        return this.products.at(-1)!
     }
 
     override delete(id: number): void {
