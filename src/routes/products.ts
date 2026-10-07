@@ -1,115 +1,115 @@
-import { Router, type Request, type Response } from "express"
+import { Router, type Request, type Response } from 'express'
 import * as z from 'zod'
-import multer from "multer"
+import multer from 'multer'
+import { Prisma } from '../../generated/prisma/client.js'
 
-import { productsRepository } from "../repository/products.repository.js"
-import { formatSuccess } from "../middleware/format-result.js"
-import { 
-    getManyProductsInputSchema, 
-    getProductsWithMetaOutputSchema, 
-    createProductInputSchema, 
+import { productsRepository } from '../repository/products.repository.js'
+import { formatSuccess } from '../middleware/format-result.js'
+import {
+    getManyProductsInputSchema,
+    getProductsWithMetaOutputSchema,
+    createProductInputSchema,
     getProductOutputSchema,
-    getProductInputSchema
+    getProductInputSchema,
+    updateProductInputSchema,
 } from '../schemas/products.schema.js'
 
-const upload = multer({
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/png'])
+
+const imageUploader = multer({
     storage: multer.memoryStorage(),
-    limits: {
-        fileSize: 2 * 1024 * 1024 
-    },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+    limits: { fileSize: MAX_IMAGE_SIZE },
+    fileFilter: (_req, file, cb) => {
+        if (ALLOWED_MIME.has(file.mimetype)) {
             cb(null, true)
         } else {
             cb(new Error('INVALID_FILE_TYPE'))
         }
-    }
+    },
 })
+
+function buildImageUrl(file: Express.Multer.File): string {
+    return `/static/${Date.now()}-${file.originalname}`
+}
 
 export const productsRouter = Router()
 
-productsRouter.get('/', async (request: Request, response: Response, next) => {
+productsRouter.get('/', async (req: Request, res: Response, next) => {
     try {
-        const input = z.parse(getManyProductsInputSchema, request) 
-        const { data, meta } = await productsRepository.getAll(input)
+        const parsed = z.parse(getManyProductsInputSchema, req)
+        const result = await productsRepository.getAll(parsed)
+        const payload = getProductsWithMetaOutputSchema.parse(result)
 
-        const responseData = getProductsWithMetaOutputSchema.parse({ data, meta })
-        console.log(responseData)
-
-        formatSuccess(response, responseData, "200")
-    } catch (error) {
-        next(error)
+        formatSuccess(res, payload, '200')
+    } catch (err) {
+        next(err)
     }
 })
 
-productsRouter.get('/:id', async (request: Request, response: Response, next) => {
+productsRouter.get('/:id', async (req: Request, res: Response, next) => {
     try {
-        const input = z.parse(getProductInputSchema, request)
-        const product = await productsRepository.getOne(input.params.id)
-        
-        const responseData = getProductOutputSchema.parse(product)
-        formatSuccess(response, responseData, "200")
-    } catch (error: any) {
-        if (error.message === 'Record not found') {
-            response.status(404).json({ error: error.message })
+        const parsed = z.parse(getProductInputSchema, req)
+        const product = await productsRepository.getOne(parsed.params.id)
+        const payload = getProductOutputSchema.parse(product)
+
+        formatSuccess(res, payload, '200')
+    } catch (err: any) {
+        if (err.message === 'Record not found') {
+            res.status(404).json({ error: err.message })
         } else {
-            next(error)
+            next(err)
         }
     }
 })
 
-productsRouter.post('/', upload.single('image'), async (request: Request, response: Response, next) => {
-    try {
-        const input = z.parse(createProductInputSchema, request)
-        
-        let imageUrl: string | null = null
-        if (request.file) {
-            imageUrl = `https://storage.local{Date.now()}-${request.file.originalname}`
-        }
+productsRouter.post(
+    '/',
+    imageUploader.single('image'),
+    async (req: Request, res: Response, next) => {
+        try {
+            const parsed = z.parse(createProductInputSchema, req)
+            const imageUrl = req.file ? buildImageUrl(req.file) : null
 
-        const recordWithImage = {
-            ...input,
-            imageUrl
-        }
+            const created = await productsRepository.add({ ...parsed, imageUrl })
+            const payload = getProductOutputSchema.parse(created)
 
-        const createdProduct = await productsRepository.add(recordWithImage)
-        const responseData = getProductOutputSchema.parse(createdProduct)
-
-        formatSuccess(response, responseData, "201")
-    } catch (error) {
-        next(error)
-    }
-})
-
-productsRouter.patch('/:id', upload.single('image'), async (request: Request, response: Response, next) => {
-    try {
-        const { id } = request.params
-        const email = request.headers['authorization'] as string
-
-        if (!email) {
-            return response.status(401).json({ error: "Unauthorized: Missing Authorization header" })
-        }
-
-        const updateFields: any = { ...request.body }
-        if (updateFields.price) {
-            updateFields.price = Number(updateFields.price)
-        }
-
-        if (request.file) {
-            updateFields.imageUrl = `https://storage.local{Date.now()}-${request.file.originalname}`
-        }
-
-        const updatedProduct = await (productsRepository as any).update(id, email, updateFields)
-        
-        const responseData = getProductOutputSchema.parse(updatedProduct)
-        formatSuccess(response, responseData, "200")
-    } catch (error: any) {
-        if (error.message === 'Forbidden') {
-            response.status(403).json({ error: "Forbidden: You are not the owner of this product" })
-        } else if (error.message === 'Record not found') {
-            response.status(404).json({ error: error.message })
-        } else {
-            next(error)
+            formatSuccess(res, payload, '201')
+        } catch (err) {
+            next(err)
         }
     }
-})
+)
+
+productsRouter.patch(
+    '/:id',
+    imageUploader.single('image'),
+    async (req: Request, res: Response, next) => {
+        try {
+            const parsed = z.parse(updateProductInputSchema, req)
+            const { id } = parsed.params
+            const owner = parsed.headers.authorization
+
+            const patch: Prisma.ProductUpdateInput = { ...parsed.body }
+
+            if (req.file) {
+                patch.imageUrl = buildImageUrl(req.file)
+            }
+
+            const updated = await productsRepository.update(id, owner, patch)
+            const payload = getProductOutputSchema.parse(updated)
+
+            formatSuccess(res, payload, '200')
+        } catch (err: any) {
+            if (err.message === 'Forbidden') {
+                res.status(403).json({
+                    error: 'Forbidden: You are not the owner of this product',
+                })
+            } else if (err.message === 'Record not found') {
+                res.status(404).json({ error: err.message })
+            } else {
+                next(err)
+            }
+        }
+    }
+)
