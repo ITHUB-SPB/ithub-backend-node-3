@@ -9,9 +9,9 @@ export const metaSchema = z.strictObject({
     pages: nonNegativeNumber,
 })
 
-export const inputSchema = z.object({
-    body: z.union([z.null(), z.any(), z.object()]),
-    query: z.union([z.null(), z.any(), z.object()]),
-    params: z.union([z.null(), z.any(), z.object()]),
-    headers: z.union([z.null(), z.any(), z.object()])
-})
+// export const inputSchema = z.object({
+//     body: z.union([z.null(), z.any(), z.object()]),
+//     query: z.union([z.null(), z.any(), z.object()]),
+//     params: z.union([z.null(), z.any(), z.object()]),
+//     headers: z.union([z.null(), z.any(), z.object()])
+// })
