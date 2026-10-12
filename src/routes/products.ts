@@ -54,8 +54,8 @@ productsRouter.get('/:id', async (req: Request, res: Response, next) => {
         const payload = getProductOutputSchema.parse(product)
 
         formatSuccess(res, payload, '200')
-    } catch (err: any) {
-        if (err.message === 'Record not found') {
+    } catch (err: unknown) {
+        if (err instanceof Error && err.message === 'Record not found') {
             res.status(404).json({ error: err.message })
         } else {
             next(err)
@@ -100,16 +100,19 @@ productsRouter.patch(
             const payload = getProductOutputSchema.parse(updated)
 
             formatSuccess(res, payload, '200')
-        } catch (err: any) {
-            if (err.message === 'Forbidden') {
-                res.status(403).json({
-                    error: 'Forbidden: You are not the owner of this product',
-                })
-            } else if (err.message === 'Record not found') {
-                res.status(404).json({ error: err.message })
-            } else {
-                next(err)
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                if (err.message === 'Forbidden') {
+                    res.status(403).json({
+                        error: 'Forbidden: You are not the owner of this product',
+                    })
+                    return
+                } else if (err.message === 'Record not found') {
+                    res.status(404).json({ error: err.message })
+                    return
+                }
             }
+            next(err)
         }
     }
 )
