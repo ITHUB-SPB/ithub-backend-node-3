@@ -20,7 +20,6 @@ export function formatError(
     code: ErrorCode | string = "400",
     details: object = {}
 ) {
-    // Защита от падения: если code не число, ставим 500
     let statusCode = Number(code)
     if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
         statusCode = 500
