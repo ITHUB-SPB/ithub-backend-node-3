@@ -5,8 +5,8 @@ type ErrorCode = `${4 | 5}${number}${number}`
 
 export function formatSuccess(
     response: Response,
-    data: { [k: string]: object },
-    code: SuccessCode
+    data: object,
+    code: SuccessCode = "200"
 ) {
     response.status(Number(code)).json({
         success: true,
@@ -17,10 +17,16 @@ export function formatSuccess(
 export function formatError(
     response: Response,
     message: string,
-    code: ErrorCode = "400",
+    code: ErrorCode | string = "400",
     details: object = {}
 ) {
-    response.status(Number(code)).json({
+    // Защита от падения: если code не число, ставим 500
+    let statusCode = Number(code)
+    if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
+        statusCode = 500
+    }
+
+    response.status(statusCode).json({
         success: false,
         error: message,
         details

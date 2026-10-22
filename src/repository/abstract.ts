@@ -21,3 +21,4 @@ export abstract class ProductsRepository<KSync> extends BaseRepository<Product, 
     // abstract override update(id: Product['id'], newRecord: Partial<Product>): KSync extends true ? Partial<Product> : Promise<Partial<Product>>;
     abstract override delete(id: Product['id']): KSync extends true ? void : Promise<void>;
 }
+

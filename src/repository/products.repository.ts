@@ -1,123 +1,92 @@
-import * as z from 'zod'
-import { prisma } from '../prisma.js'
+import { prisma } from "../prisma.js";
+import type { z } from "zod";
+import {
+    getManyProductsInputSchema,
+    createProductInputSchema
+} from "../schemas/products.schema.js";
 
-import { ProductsRepository } from "./abstract.js";
-import { productSchema, createProductInputSchema, getProductOutputSchema, getProductsInputSchema, getProductsWithMetaOutputSchema } from '../schemas/products.schema.js'
-import { products } from "../data.js";
+type GetManyInput = z.output<typeof getManyProductsInputSchema>;
+type CreateInput = z.output<typeof createProductInputSchema>;
 
-type Product = z.output<typeof productSchema>
+export const productsRepository = {
+    async getAll(input: GetManyInput) {
+        const { category, minPrice, maxPrice, page, limit } = input.query;
 
-class ProductsRepositorySqlite extends ProductsRepository<false> {
-    override async add(record: z.output<typeof createProductInputSchema>): Promise<z.output<typeof getProductOutputSchema>> {
-        try {
-            const createdRecord = await prisma.product.create({
-                data: record.body,
-            })
-
-            return createdRecord
-        } catch (error) {
-            throw error
-        }
-    }
-
-    override getAll(input: z.output<typeof getProductsInputSchema>): Promise<z.output<typeof getProductsWithMetaOutputSchema>> {
-        return Promise.resolve({
-            data: [
-                {
-                    id: 1,
-                    name: "bloose",
-                    category: "clothing",
-                    description: "xl",
-                    price: 4200,
-                    imageUrl: null,
-                    accountEmail: "test@example.com",
-                    archived: false,
-                    createdAt: new Date(2022, 8, 10)
-                }
-            ],
-            meta: {
-                limit: 10,
-                page: 1,
-                pages: 1,
-                total: 1
-            }
-        })
-    }
-
-    override async getOne(id: number | string): Promise<z.output<typeof getProductOutputSchema>> {
-        return Promise.resolve({
-            id: 1,
-            name: "bloose",
-            category: "clothing",
-            description: "xl",
-            price: 4200,
-            imageUrl: null,
-            accountEmail: "test@example.com",
+        const where = {
             archived: false,
-            createdAt: new Date(2022, 8, 10),
-            email: "test@example.com"
-        })
-    }
-
-    override async delete(id: number | string): Promise<void> {
-        return
-    }
-}
-
-class ProductsRepositoryMemory extends ProductsRepository<true> {
-    private products: Product[];
-
-    constructor() {
-        super()
-        this.products = products;
-    }
-
-    override getAll(input: z.output<typeof getProductsInputSchema>): z.output<typeof getProductsWithMetaOutputSchema> {
-        const filteredData = this.products.filter((product) => {
-            if (product.category && product.category !== input.query.category) {
-                return false
+            ...(category ? { category } : {}),
+            price: {
+                gte: minPrice,
+                lte: maxPrice
             }
-            return product.price >= input.query.minPrice && product.price <= input.query.maxPrice
-        })
+        };
 
-        const paginatedData = filteredData.slice((input.query.page - 1) * input.query.limit, input.query.page * input.query.limit)
+        const [data, total] = await Promise.all([
+            prisma.product.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: { createdAt: "desc" }
+            }),
+            prisma.product.count({ where })
+        ]);
 
-        const meta = {
-            total: this.products.length,
-            page: input.query.page,
-            limit: input.query.limit,
-            pages: Math.ceil(this.products.length / input.query.limit),
-        } as const;
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        };
+    },
 
-        return { data: paginatedData, meta }
-    }
+    async getOne(id: number) {
+        return prisma.product.findUnique({
+            where: { id }
+        });
+    },
 
-    override getOne(id: number | string): z.output<typeof getProductOutputSchema> {
-        const record = this.products.find(product => product.id === id)
+    async add(input: CreateInput, imageUrl: string | null) {
+        return prisma.product.create({
+            data: {
+                name: input.body.name,
+                price: input.body.price,
+                category: input.body.category,
+                description: input.body.description ?? null,
+                imageUrl,
+                accountEmail: input.headers.authorization
+            }
+        });
+    },
 
-        if (!record) {
-            throw new Error('Record not found')
+    async update(
+        id: number,
+        accountEmail: string,
+        body: {
+            name?: string;
+            price?: number;
+            category?: "electronics" | "clothing" | "food" | "other";
+            description?: string | null;
+            imageUrl?: string;
+        }
+    ) {
+        const product = await prisma.product.findFirst({
+            where: { id, accountEmail, archived: false }
+        });
+
+        if (!product) {
+            const error = new Error("Товар не найден или нет доступа") as Error & {
+                code?: string;
+            };
+            error.code = "404";
+            throw error;
         }
 
-        return record
+        return prisma.product.update({
+            where: { id },
+            data: body
+        });
     }
-
-    override add(record: z.output<typeof createProductInputSchema>): z.output<typeof getProductOutputSchema> {
-        const lastId = this.products.at(-1)?.id ?? 0
-        this.products.push({ ...record.body, id: lastId + 1, archived: false, accountEmail: record.headers.Authorization, createdAt: new Date() })
-
-        return this.products.at(-1)!
-    }
-
-    override delete(id: number): void {
-        const recordIndex = this.products.findIndex(product => product.id === id)
-
-        if (recordIndex === -1) {
-            throw new Error('Record not found')
-        }
-
-        this.products.splice(recordIndex, 1)
-    }
-}
-
-export const productsRepository = !process.env['DATABASE_URL'] ? new ProductsRepositoryMemory() : new ProductsRepositorySqlite()
+};
