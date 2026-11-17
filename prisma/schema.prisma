@@ -23,5 +23,5 @@ model Product {
   imageUrl     String?
   archived     Boolean  @default(false)
   createdAt    DateTime @default(now())
-  accountEmail String
+  accountEmail String   @unique
 }

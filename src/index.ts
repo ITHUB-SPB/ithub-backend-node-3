@@ -13,20 +13,21 @@ const app = express()
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
-app.use('/static', express.static(path.join(import.meta.dirname, '..', 'assets', 'uploads')))
+
+app.use('/uploads', express.static(path.join(import.meta.dirname, '..', 'uploads')))
 
 app.use(logger)
 
-app.use('api/products', productsRouter)
+app.use('/api/products', productsRouter) 
 
 app.use((_request: express.Request, _response: express.Response, next: express.NextFunction) => {
     const error = new Error('Ресурс не найден') as ErrorWithCode
     error.code = "404"
-
     next(error)
 })
 
-
 app.use(errorHandler)
 
-app.listen(3000)
+app.listen(3000, () => {
+    console.log('Сервер запущен на http://localhost:3000')
+})

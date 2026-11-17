@@ -10,7 +10,6 @@ export default function (error: ErrorWithCode, _: Request, response: Response, n
             success: false,
             error: treeifyError(error)
         })
-
         return
     }
 
@@ -22,6 +21,4 @@ export default function (error: ErrorWithCode, _: Request, response: Response, n
         success: false,
         error: error.message
     })
-
-    next()
 }
